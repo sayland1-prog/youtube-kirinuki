@@ -78,6 +78,11 @@ def create_job(body: CreateJobRequest, db: Session = Depends(get_db)):
     return CreateJobResponse(job_id=job.id, status="queued")
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.get(
     "/api/jobs/{job_id}",
     response_model=JobResponse,
