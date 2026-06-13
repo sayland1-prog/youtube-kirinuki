@@ -1,0 +1,34 @@
+# ============================================
+# YouTube 切り抜き自動化パイプライン 設定ファイル
+# ============================================
+
+download:
+  resolution: 1080          # ダウンロードする最大解像度
+  format: mp4
+
+transcribe:
+  engine: faster-whisper    # faster-whisper（ローカル / 推奨） or openai-api
+  model: large-v3-turbo     # ローカルモデル名（large-v3-turbo: v3より速く軽量）
+  language: ja
+  device: auto              # auto / cuda / cpu
+  compute_type: auto        # auto / float16 / int8
+
+analyze:
+  model: claude-sonnet-4-6  # ハイライト選定モデル。判断重視なら claude-opus-4-8
+  num_clips: 5              # 1動画から抽出するクリップ数
+  min_seconds: 15           # 各クリップの最短尺
+  max_seconds: 60           # 各クリップの最長尺
+
+clip:
+  vertical: true            # 9:16 ショート版を生成
+  horizontal: true          # 16:9 クリップ版を生成
+  vertical_layout: blur     # blur（ぼかし背景でフィット） / crop（中央クロップ）
+  burn_subtitles: true      # 字幕を焼き込む
+
+subtitle:
+  font: "Hiragino Sans"     # 環境に存在する日本語フォント名（mac標準）
+  fontsize_vertical: 72     # 9:16 用フォントサイズ
+  fontsize_horizontal: 52   # 16:9 用フォントサイズ
+  outline: 4                # 縁取りの太さ
+  max_chars: 18             # 1行あたりの最大文字数（目安）
+  max_gap: 0.7              # この秒数以上の無音で字幕を区切る

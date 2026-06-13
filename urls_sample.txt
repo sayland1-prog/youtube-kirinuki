@@ -1,0 +1,4 @@
+# URLを1行1件で記述。#から始まる行と空行は無視されます。
+# 例:
+# https://www.youtube.com/watch?v=XXXX
+# https://www.youtube.com/watch?v=YYYY

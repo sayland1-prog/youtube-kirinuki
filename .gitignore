@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# 環境変数（シークレット）
+.env
+.env.local
+web/backend/.env
+web/frontend/.env.local
+
+# 出力・一時ファイル
+output/
+*.mp4
+*.wav
+*.mp3
+
+# Node.js
+node_modules/
+.next/
+web/frontend/.next/
+
+# Whisper モデルキャッシュ
+~/.cache/huggingface/
+
+# Claude Code
+.claude/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
