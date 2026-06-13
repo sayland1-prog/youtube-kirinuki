@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本番公開までの手順書 — youtube-kirinuki</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      background: #f5f7fa;
+      color: #1a1a2e;
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ── レイアウト ── */
+    .page-wrapper {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* サイドバー */
+    .sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: #1e293b;
+      color: #cbd5e1;
+      padding: 28px 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+    }
+    .sidebar-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #64748b;
+      padding: 0 20px 12px;
+    }
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 13px;
+      transition: background .15s, color .15s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar a:hover { background: #334155; color: #f1f5f9; }
+    .sidebar a.active { background: #1d4ed820; color: #60a5fa; border-left-color: #3b82f6; }
+    .sidebar .step-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #334155;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .sidebar a.done .step-num { background: #166534; color: #86efac; }
+    .sidebar a.done { color: #86efac; }
+
+    /* メインコンテンツ */
+    .main {
+      margin-left: 240px;
+      flex: 1;
+      padding: 48px 56px;
+      max-width: 900px;
+    }
+
+    /* ── ヘッダー ── */
+    .page-header {
+      background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+      color: white;
+      border-radius: 16px;
+      padding: 36px 40px;
+      margin-bottom: 40px;
+    }
+    .page-header h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { opacity: .85; font-size: 14px; }
+    .badge-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .badge {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ── ヒントボックス ── */
+    .tip {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      font-size: 13.5px;
+      margin-bottom: 32px;
+      color: #1e40af;
+    }
+
+    /* ── ステップカード ── */
+    .step-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 22px 28px;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      user-select: none;
+    }
+    .step-header:hover { background: #fafbfc; }
+    .step-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .step-header h2 {
+      font-size: 17px;
+      font-weight: 700;
+      flex: 1;
+    }
+    .step-header .chevron {
+      color: #94a3b8;
+      font-size: 18px;
+      transition: transform .2s;
+    }
+    .step-card.collapsed .chevron { transform: rotate(-90deg); }
+    .step-body { padding: 24px 28px; }
+    .step-card.collapsed .step-body { display: none; }
+
+    /* サブセクション */
+    .sub-section { margin-bottom: 24px; }
+    .sub-section:last-child { margin-bottom: 0; }
+    .sub-section h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #64748b;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    /* 順序リスト */
+    ol { padding-left: 20px; }
+    ol li { margin-bottom: 6px; font-size: 14px; }
+    ul.check-list { list-style: none; padding: 0; margin-top: 12px; }
+    ul.check-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .1s;
+    }
+    ul.check-list li:hover { background: #f8fafc; }
+    ul.check-list li.done { color: #6b7280; text-decoration: line-through; }
+    ul.check-list li input[type="checkbox"] {
+      width: 17px; height: 17px;
+      accent-color: #2563eb;
+      margin-top: 2px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    /* コードブロック */
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 16px 20px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.65;
+      margin: 12px 0;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+    }
+    code {
+      background: #f1f5f9;
+      color: #be185d;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12.5px;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+    }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+    /* コメント行（bash の #） */
+    .comment { color: #64748b; }
+
+    /* テーブル */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      margin: 12px 0;
+    }
+    th {
+      background: #f8fafc;
+      text-align: left;
+      padding: 8px 14px;
+      font-weight: 600;
+      color: #475569;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    tr:last-child td { border-bottom: none; }
+    td code { font-size: 12px; }
+
+    /* 警告・注意 */
+    .alert {
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13.5px;
+      margin: 12px 0;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .alert-warn { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+    .alert-danger { background: #fff1f2; border: 1px solid #fda4af; color: #9f1239; }
+    .alert-icon { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+
+    /* メモ入力欄 */
+    .memo-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .memo-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      display: flex;
+      align-items: center;
+    }
+    .memo-input {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-family: "SF Mono", Consolas, monospace;
+      color: #1e293b;
+      background: #f8fafc;
+      width: 100%;
+      transition: border-color .15s;
+    }
+    .memo-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: white;
+    }
+
+    /* トラブルシューティング */
+    .trouble-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .trouble-q {
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+    }
+    .trouble-q:hover { background: #f1f5f9; }
+    .trouble-a {
+      padding: 12px 16px;
+      font-size: 13.5px;
+      color: #374151;
+      border-top: 1px solid #e2e8f0;
+      display: none;
+    }
+    .trouble-item.open .trouble-a { display: block; }
+    .trouble-item.open .trouble-q { background: #eff6ff; color: #1d4ed8; }
+
+    /* 進捗バー */
+    .progress-bar-wrap {
+      background: #e2e8f0;
+      border-radius: 100px;
+      height: 8px;
+      margin-bottom: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      border-radius: 100px;
+      transition: width .4s ease;
+    }
+    .progress-label {
+      font-size: 12px;
+      color: #64748b;
+      text-align: right;
+    }
+
+    /* セクション色テーマ */
+    .theme-blue   .step-icon { background: #eff6ff; }
+    .theme-green  .step-icon { background: #f0fdf4; }
+    .theme-orange .step-icon { background: #fff7ed; }
+    .theme-purple .step-icon { background: #faf5ff; }
+    .theme-red    .step-icon { background: #fff1f2; }
+    .theme-teal   .step-icon { background: #f0fdfa; }
+    .theme-yellow .step-icon { background: #fefce8; }
+    .theme-indigo .step-icon { background: #eef2ff; }
+    .theme-pink   .step-icon { background: #fdf2f8; }
+    .theme-slate  .step-icon { background: #f8fafc; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- サイドバー -->
+<div class="page-wrapper">
+<nav class="sidebar">
+  <div class="sidebar-title">手順一覧</div>
+  <a href="#step1" id="nav1"><span class="step-num">1</span>SSH キー作成</a>
+  <a href="#step2" id="nav2"><span class="step-num">2</span>サーバーを借りる</a>
+  <a href="#step3" id="nav3"><span class="step-num">3</span>DNS 設定</a>
+  <a href="#step4" id="nav4"><span class="step-num">4</span>Cloudflare R2</a>
+  <a href="#step5" id="nav5"><span class="step-num">5</span>Resend メール</a>
+  <a href="#step6" id="nav6"><span class="step-num">6</span>サーバー設定</a>
+  <a href="#step7" id="nav7"><span class="step-num">7</span>Vercel 公開</a>
+  <a href="#step8" id="nav8"><span class="step-num">8</span>URL 更新</a>
+  <a href="#step9" id="nav9"><span class="step-num">9</span>自動デプロイ</a>
+  <a href="#step10" id="nav10"><span class="step-num">10</span>動作確認</a>
+  <a href="#memo" id="navmemo"><span class="step-num">📝</span>メモ欄</a>
+  <a href="#trouble" id="navtrouble"><span class="step-num">🔧</span>トラブル対応</a>
+</nav>
+
+<!-- メインコンテンツ -->
+<main class="main">
+
+  <!-- ヘッダー -->
+  <div class="page-header">
+    <h1>🎬 本番公開までの手順書</h1>
+    <p>このページに書かれた作業は、あなた自身がブラウザやターミナルで行う必要がある操作です。<br>上から順番に進めてください。</p>
+    <div class="badge-row">
+      <span class="badge">⏱ 所要時間 2〜3 時間</span>
+      <span class="badge">🔟 全 10 ステップ</span>
+      <span class="badge">🔰 初心者向け</span>
+    </div>
+  </div>
+
+  <!-- 進捗 -->
+  <div style="background:white;border-radius:12px;padding:18px 24px;margin-bottom:28px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+    <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;">全体の進捗</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 25 完了</div>
+  </div>
+
+  <div class="tip">
+    💡 <strong>困ったときは</strong> Claude に「Step X が分からない」と伝えれば一緒に解決できます。
+  </div>
+
+  <!-- ═══ Step 1 ═══ -->
+  <div class="step-card theme-blue" id="step1">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">🔑</div>
+      <h2>Step 1: SSH キーを作成する</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="margin-bottom:14px;font-size:14px;">SSH キーとは「パスワードの代わりにサーバーへログインするための鍵」です。すでに作成済みの場合はスキップしてください。</p>
+
+      <div class="sub-section">
+        <h3>手順</h3>
+        <p style="font-size:14px;margin-bottom:8px;"><strong>ターミナル（Mac のアプリ）を開いて以下を実行:</strong></p>
+        <pre><span class="comment"># 鍵ファイルが既にあるか確認</span>
+ls ~/.ssh/id_ed25519.pub</pre>
+        <ul style="list-style:disc;padding-left:20px;font-size:14px;margin:8px 0;">
+          <li><code>No such file or directory</code> と表示された → 下記で鍵を作成する</li>
+          <li>ファイル名が表示された → このステップはスキップ</li>
+        </ul>
+        <pre><span class="comment"># 鍵を作成（質問が出たら全て Enter を押してOK）</span>
+ssh-keygen -t ed25519 -C "your@email.com"</pre>
+        <p style="font-size:14px;margin:10px 0 6px;">作成後、公開鍵の中身をコピーしておく（後で使います）:</p>
+        <pre><span class="comment"># 表示された1行（ssh-ed25519 AAAA... で始まる）をコピーしておく</span>
+cat ~/.ssh/id_ed25519.pub</pre>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> SSH キーを作成した（またはすでに存在を確認した）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 2 ═══ -->
+  <div class="step-card theme-green" id="step2">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">🖥️</div>
+      <h2>Step 2: Hetzner Cloud でサーバーを借りる</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:16px;">Hetzner（ヘッツナー）はドイツのクラウドサービスです。月 €30 ほどで動画処理に十分なスペックのサーバーが借りられます。</p>
+
+      <div class="sub-section">
+        <h3>2-1. アカウント作成</h3>
+        <ol>
+          <li><a href="https://www.hetzner.com/cloud" target="_blank">https://www.hetzner.com/cloud</a> を開く</li>
+          <li>右上の「Get started」→「Sign up」</li>
+          <li>メールアドレス・パスワードを入力して登録</li>
+          <li>届いた確認メールのリンクをクリック</li>
+          <li>クレジットカードを登録（使った分だけ課金）</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>2-2. プロジェクト作成</h3>
+        <ol>
+          <li>ログイン後、「+ New project」をクリック</li>
+          <li>プロジェクト名を入力（例: <code>kirinuki</code>）→「Add project」</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>2-3. SSH キーを登録</h3>
+        <ol>
+          <li>左メニュー「Security」→「SSH Keys」→「Add SSH key」</li>
+          <li>「Public key」の欄に、Step 1 でコピーした <code>ssh-ed25519 AAAA...</code> の1行を貼り付ける</li>
+          <li>名前を入力（例: <code>my-mac</code>）→「Add SSH key」</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>2-4. サーバーを作成</h3>
+        <ol>
+          <li>左メニュー「Servers」→「Add server」</li>
+          <li>以下のように選択:</li>
+        </ol>
+        <table>
+          <tr><th>項目</th><th>選択する値</th></tr>
+          <tr><td>Location</td><td>Nuremberg（どこでもOK）</td></tr>
+          <tr><td>Image</td><td>Ubuntu 22.04</td></tr>
+          <tr><td>Type</td><td>Shared vCPU → x86 → <strong>CX42</strong>（8コア / 32GB / €30.99/月）</td></tr>
+          <tr><td>SSH Keys</td><td>Step 2-3 で登録したキーにチェック</td></tr>
+        </table>
+        <ol start="3">
+          <li>「Create &amp; Buy now」をクリック</li>
+          <li>作成後、一覧に表示される <strong>IP アドレス</strong>（例: <code>49.12.34.56</code>）をメモ</li>
+        </ol>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> Hetzner アカウントを作成した</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> SSH キーを Hetzner に登録した</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> サーバー（CX42）を作成し IP アドレスをメモした</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 3 ═══ -->
+  <div class="step-card theme-orange" id="step3">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">🌐</div>
+      <h2>Step 3: ドメインの DNS を設定する</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">「ドメイン」とは <code>yourdomain.com</code> のような URL のことです。お持ちのドメインのレジストラ（お名前.com / Cloudflare / Namecheap など）で設定します。</p>
+
+      <div class="sub-section">
+        <h3>追加するDNSレコード</h3>
+        <table>
+          <tr><th>種類</th><th>ホスト名</th><th>値</th></tr>
+          <tr><td>A</td><td><code>api</code></td><td>Step 2 でメモしたサーバーの IP アドレス</td></tr>
+        </table>
+        <p style="font-size:13px;color:#64748b;margin-top:8px;">※ レジストラによって画面が違います。「DNS管理」や「ネームサーバー設定」などのメニューを探してください。</p>
+      </div>
+
+      <div class="sub-section">
+        <h3>反映確認（ターミナルで実行）</h3>
+        <pre><span class="comment"># サーバーのIPアドレスが表示されればOK（最大1時間かかることがある）</span>
+dig api.yourdomain.com +short</pre>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> DNS の A レコードを設定した</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> <code>dig</code> コマンドで IP アドレスが表示された</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 4 ═══ -->
+  <div class="step-card theme-purple" id="step4">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">🗄️</div>
+      <h2>Step 4: Cloudflare R2 を設定する（動画の保存場所）</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">R2 は動画ファイルを保存するためのクラウドストレージです。転送料が無料なので採用しています。</p>
+
+      <div class="sub-section">
+        <h3>4-1. Cloudflare アカウント作成</h3>
+        <ol>
+          <li><a href="https://dash.cloudflare.com/sign-up" target="_blank">https://dash.cloudflare.com/sign-up</a> を開く</li>
+          <li>メールアドレスとパスワードを入力して登録</li>
+          <li>届いた確認メールのリンクをクリック</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>4-2. バケット（保存場所）を作成</h3>
+        <ol>
+          <li>ログイン後、左メニュー「R2 Object Storage」をクリック</li>
+          <li>「Create bucket」をクリック</li>
+          <li>Bucket name に <code>kirinuki</code> と入力</li>
+          <li>Location: <strong>APAC</strong> を選択</li>
+          <li>「Create bucket」をクリック</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>4-3. API トークンを発行</h3>
+        <ol>
+          <li>R2 のページ右上「Manage R2 API Tokens」→「Create API Token」</li>
+          <li>Token name: <code>kirinuki-token</code>（任意）</li>
+          <li>Permissions: <strong>Object Read &amp; Write</strong></li>
+          <li>Specify bucket: <code>kirinuki</code> を選択</li>
+          <li>「Create API Token」をクリック</li>
+        </ol>
+        <div class="alert alert-danger">
+          <span class="alert-icon">⚠️</span>
+          <span><strong>この画面を閉じると Secret Access Key は二度と表示されません。</strong>今すぐメモしてください。</span>
+        </div>
+      </div>
+
+      <div class="sub-section">
+        <h3>4-4. アカウント ID を確認</h3>
+        <ol>
+          <li>Cloudflare トップ（<a href="https://dash.cloudflare.com" target="_blank">https://dash.cloudflare.com</a>）を開く</li>
+          <li>右側に「Account ID」が表示される → コピーしてメモ</li>
+        </ol>
+        <p style="font-size:13px;margin-top:6px;">エンドポイント URL: <code>https://&lt;アカウントID&gt;.r2.cloudflarestorage.com</code></p>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> バケット <code>kirinuki</code> を作成した</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> Access Key ID をメモした</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> Secret Access Key をメモした</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> アカウント ID をメモした</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 5 ═══ -->
+  <div class="step-card theme-teal" id="step5">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">📧</div>
+      <h2>Step 5: Resend を設定する（メール送信サービス）</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">処理完了や失敗をユーザーにメールで通知するためのサービスです。</p>
+
+      <div class="sub-section">
+        <h3>5-1. アカウント作成</h3>
+        <ol>
+          <li><a href="https://resend.com" target="_blank">https://resend.com</a> を開く</li>
+          <li>「Get Started」→「Sign Up」</li>
+          <li>GitHub アカウントまたはメールで登録</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>5-2. 送信ドメインを認証する</h3>
+        <ol>
+          <li>左メニュー「Domains」→「Add Domain」</li>
+          <li>自分のドメイン（例: <code>yourdomain.com</code>）を入力 → 「Add」</li>
+          <li>表示された DNS レコード（3〜4行）を Step 3 と同じ DNS 設定画面に追加する</li>
+          <li>「Verify DNS Records」をクリック → 全て ✅ になるまで待つ（最大1時間）</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>5-3. API キーを発行</h3>
+        <ol>
+          <li>左メニュー「API Keys」→「Create API Key」</li>
+          <li>Name: <code>kirinuki</code>（任意）</li>
+          <li>Permission: <strong>Full access</strong></li>
+          <li>「Add」をクリック</li>
+          <li>表示された <code>re_xxxx...</code> をメモ（この画面でしか表示されません）</li>
+        </ol>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> ドメインが Verified になった</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> API キー（<code>re_xxx...</code>）をメモした</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 6 ═══ -->
+  <div class="step-card theme-red" id="step6">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">⚙️</div>
+      <h2>Step 6: サーバーにアプリをセットアップする</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">ここからはサーバー上での作業です。ターミナルから操作します。</p>
+
+      <div class="sub-section">
+        <h3>6-1. サーバーに SSH 接続</h3>
+        <pre><span class="comment"># 49.12.34.56 の部分を Step 2 でメモしたIPアドレスに変更</span>
+ssh root@49.12.34.56</pre>
+        <p style="font-size:13.5px;margin-top:8px;">初回接続時に「Are you sure you want to continue connecting?」と聞かれたら <code>yes</code> と入力して Enter。</p>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-2. セットアップスクリプトを実行</h3>
+        <pre><span class="comment"># yourdomain.com と your@email.com を自分のものに変更</span>
+curl -fsSL https://raw.githubusercontent.com/sayland1-prog/youtube-kirinuki/main/deploy/setup.sh \
+  | bash -s yourdomain.com your@email.com</pre>
+        <p style="font-size:13.5px;margin-top:8px;">Docker・SSL証明書などを自動インストールします（5〜10分かかります）。</p>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-3. リポジトリをクローン</h3>
+        <pre>mkdir -p /app && cd /app
+git clone https://github.com/sayland1-prog/youtube-kirinuki.git .</pre>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-4. 環境変数ファイルを作成</h3>
+        <pre>cp web/backend/.env.example web/backend/.env
+nano web/backend/.env</pre>
+        <p style="font-size:13.5px;margin:8px 0;"><code>nano</code> というテキストエディタが開きます。矢印キーで移動して各値を書き換え、<strong>Ctrl+O → Enter で保存、Ctrl+X で閉じる</strong>。</p>
+        <pre>DATABASE_URL=postgresql://kirinuki:<strong>あなたが決めた強いパスワード</strong>@db:5432/kirinuki
+REDIS_URL=redis://redis:6379/0
+ANTHROPIC_API_KEY=sk-ant-（Claude の API キー）
+R2_ACCESS_KEY_ID=（Step 4-3 でメモした値）
+R2_SECRET_ACCESS_KEY=（Step 4-3 でメモした値）
+R2_BUCKET=kirinuki
+R2_ENDPOINT=https://（Step 4-4 のアカウントID）.r2.cloudflarestorage.com
+RESEND_API_KEY=（Step 5-3 でメモした re_xxx...）
+MAIL_FROM=noreply@yourdomain.com
+SERVICE_URL=https://yourdomain.com
+FRONTEND_ORIGIN=https://your-app.vercel.app  ← Step 7 完了後に更新
+MAX_CONCURRENT_JOBS=10</pre>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-5. DB パスワードファイルを作成</h3>
+        <pre><span class="comment"># 6-4 で決めたパスワードと同じものを入力</span>
+echo "POSTGRES_PASSWORD=あなたが決めた強いパスワード" > /app/.env</pre>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-6. nginx のドメインを反映</h3>
+        <pre><span class="comment"># yourdomain.com を自分のドメインに変更</span>
+sed -i 's/api.yourdomain.com/api.自分のドメイン.com/g' /app/deploy/nginx.conf</pre>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-7. アプリを起動</h3>
+        <pre>bash deploy/start.sh</pre>
+        <pre><span class="comment"># {"status":"ok"} と表示されればOK</span>
+curl https://api.yourdomain.com/health</pre>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> SSH でサーバーに接続できた</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> <code>.env</code> に全ての値を入力した</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> <code>{"status":"ok"}</code> が返ってきた</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 7 ═══ -->
+  <div class="step-card theme-indigo" id="step7">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">🚀</div>
+      <h2>Step 7: Vercel でフロントエンドを公開する</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">Vercel はフロントエンド（ユーザーが見る画面）を無料でホスティングできるサービスです。</p>
+
+      <div class="sub-section">
+        <h3>7-1. アカウント作成</h3>
+        <ol>
+          <li><a href="https://vercel.com" target="_blank">https://vercel.com</a> を開く</li>
+          <li>「Sign Up」→「Continue with GitHub」（GitHub アカウントで登録が便利）</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>7-2. プロジェクトを作成</h3>
+        <ol>
+          <li>ダッシュボードの「Add New...」→「Project」</li>
+          <li>「Import Git Repository」で <code>sayland1-prog/youtube-kirinuki</code> を選択<br>
+            <span style="font-size:13px;color:#64748b;">見つからない場合: 「Adjust GitHub App Permissions」→ リポジトリを追加</span></li>
+          <li>以下を設定:</li>
+        </ol>
+        <table>
+          <tr><th>設定項目</th><th>入力する値</th></tr>
+          <tr><td>Root Directory</td><td><code>web/frontend</code>（重要）</td></tr>
+          <tr><td>Framework Preset</td><td>Next.js（自動検出）</td></tr>
+          <tr><td>環境変数 Name</td><td><code>NEXT_PUBLIC_API_URL</code></td></tr>
+          <tr><td>環境変数 Value</td><td><code>https://api.yourdomain.com</code></td></tr>
+        </table>
+        <ol start="4">
+          <li>「Deploy」をクリック</li>
+          <li>完了後に表示される URL（例: <code>kirinuki.vercel.app</code>）をメモ</li>
+        </ol>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> Vercel にデプロイが成功した</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> Vercel の URL をメモした</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 8 ═══ -->
+  <div class="step-card theme-yellow" id="step8">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">🔄</div>
+      <h2>Step 8: サーバーの設定を Vercel URL で更新する</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">Step 7 で確定した Vercel の URL を、サーバーの設定に反映させます。</p>
+      <pre><span class="comment"># サーバーに SSH 接続</span>
+ssh root@49.12.34.56
+
+<span class="comment"># .env を開いて FRONTEND_ORIGIN を実際の Vercel URL に書き換える</span>
+nano /app/web/backend/.env
+<span class="comment"># FRONTEND_ORIGIN=https://kirinuki.vercel.app ← 実際の URL に変更</span>
+
+<span class="comment"># API を再起動して設定を反映</span>
+docker compose -f /app/docker-compose.yml restart api</pre>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> <code>FRONTEND_ORIGIN</code> を Vercel URL に更新して API を再起動した</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 9 ═══ -->
+  <div class="step-card theme-slate" id="step9">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">🤖</div>
+      <h2>Step 9: GitHub Actions で自動デプロイを設定する</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">コードを更新したときに自動でサーバーにデプロイされるようにします。</p>
+
+      <div class="sub-section">
+        <h3>手順</h3>
+        <ol>
+          <li><a href="https://github.com/sayland1-prog/youtube-kirinuki" target="_blank">GitHub リポジトリ</a>を開く</li>
+          <li>上部メニュー「Settings」→ 左メニュー「Secrets and variables」→「Actions」</li>
+          <li>「New repository secret」で以下の3つを追加（1つずつ「Add secret」をクリック）:</li>
+        </ol>
+        <table>
+          <tr><th>Name</th><th>Value</th></tr>
+          <tr><td><code>SERVER_HOST</code></td><td>サーバーの IP アドレス（例: <code>49.12.34.56</code>）</td></tr>
+          <tr><td><code>SERVER_USER</code></td><td><code>root</code></td></tr>
+          <tr><td><code>SERVER_SSH_KEY</code></td><td>ターミナルで <code>cat ~/.ssh/id_ed25519</code> を実行した結果（<code>-----BEGIN OPENSSH PRIVATE KEY-----</code> から始まる全文）</td></tr>
+        </table>
+        <ol start="4">
+          <li>動作確認: 適当なファイルを編集して <code>main</code> に push し、「Actions」タブで ✅ が表示されることを確認</li>
+        </ol>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> 3つのシークレットを登録した</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> Actions が成功した（緑の ✅ が表示される）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 10 ═══ -->
+  <div class="step-card theme-pink" id="step10">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">✅</div>
+      <h2>Step 10: 最終動作確認</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">全て完了したら、実際に使ってみて確認します。</p>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> Vercel の URL をブラウザで開いてフォームが表示される</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> 切り抜き許可のある配信者の YouTube URL とメールアドレスを入力して送信</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> 進捗ページ（<code>/jobs/xxxxxxxx-...</code>）に自動遷移し「動画を準備中」などのステータスが表示される</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> 5秒ごとにステータスが更新される</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> 処理完了後（15〜30分）、入力したメールにダウンロードリンクが届く</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> 失敗した場合もメールで通知が届く</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ メモ欄 ═══ -->
+  <div class="step-card" id="memo" style="border: 2px dashed #e2e8f0;">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon" style="background:#f8fafc;">📝</div>
+      <h2>メモ欄（進めながら書き込んでください）</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <div class="memo-grid">
+        <span class="memo-label">サーバー IP</span>
+        <input class="memo-input" type="text" placeholder="49.12.34.56">
+        <span class="memo-label">ドメイン</span>
+        <input class="memo-input" type="text" placeholder="yourdomain.com">
+        <span class="memo-label">DB パスワード</span>
+        <input class="memo-input" type="password" placeholder="（安全な場所に保存してください）">
+        <span class="memo-label">R2 アカウント ID</span>
+        <input class="memo-input" type="text" placeholder="abc123...">
+        <span class="memo-label">R2 Access Key ID</span>
+        <input class="memo-input" type="text" placeholder="...">
+        <span class="memo-label">Vercel URL</span>
+        <input class="memo-input" type="text" placeholder="https://your-app.vercel.app">
+        <span class="memo-label">Anthropic API キー</span>
+        <input class="memo-input" type="password" placeholder="sk-ant-...">
+        <span class="memo-label">Resend API キー</span>
+        <input class="memo-input" type="password" placeholder="re_...">
+      </div>
+      <p style="font-size:12px;color:#94a3b8;margin-top:12px;">※ このメモはブラウザのローカルに保存されます。ページを閉じると消えるので、別途安全な場所にも控えてください。</p>
+    </div>
+  </div>
+
+  <!-- ═══ トラブルシューティング ═══ -->
+  <div class="step-card" id="trouble">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon" style="background:#fff7ed;">🔧</div>
+      <h2>よくあるトラブル</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <div class="trouble-item" onclick="toggleTrouble(this)">
+        <div class="trouble-q">SSH 接続できない <span>＋</span></div>
+        <div class="trouble-a">IP アドレスが合っているか確認してください。また、Hetzner の Security → SSH Keys に公開鍵が正しく登録されているか確認してください。</div>
+      </div>
+      <div class="trouble-item" onclick="toggleTrouble(this)">
+        <div class="trouble-q"><code>curl health</code> が返ってこない <span>＋</span></div>
+        <div class="trouble-a">DNS 伝播が終わっていない可能性があります。<code>dig api.yourdomain.com +short</code> を実行してサーバーの IP アドレスが表示されるか確認してください（最大1時間かかります）。</div>
+      </div>
+      <div class="trouble-item" onclick="toggleTrouble(this)">
+        <div class="trouble-q">メールが届かない <span>＋</span></div>
+        <div class="trouble-a">Resend のダッシュボードで「Domains」のドメインが Verified（✅）になっているか確認してください。また、<code>.env</code> の <code>MAIL_FROM</code> が認証済みドメインのアドレスと一致しているか確認してください。</div>
+      </div>
+      <div class="trouble-item" onclick="toggleTrouble(this)">
+        <div class="trouble-q">Vercel でビルドエラーが出る <span>＋</span></div>
+        <div class="trouble-a">Vercel の Project Settings → General → Root Directory が <code>web/frontend</code> になっているか確認してください。</div>
+      </div>
+      <div class="trouble-item" onclick="toggleTrouble(this)">
+        <div class="trouble-q">進捗ページでステータスが更新されない <span>＋</span></div>
+        <div class="trouble-a">サーバーにSSH接続して <code>docker compose -f /app/docker-compose.yml logs worker</code> を実行し、エラーが出ていないか確認してください。<code>ANTHROPIC_API_KEY</code> が正しく設定されているかも確認してください。</div>
+      </div>
+      <div class="trouble-item" onclick="toggleTrouble(this)">
+        <div class="trouble-q">GitHub Actions が失敗する <span>＋</span></div>
+        <div class="trouble-a">Actions タブでエラーログを確認してください。<code>SERVER_SSH_KEY</code> に秘密鍵の全文（<code>-----BEGIN OPENSSH PRIVATE KEY-----</code> から <code>-----END OPENSSH PRIVATE KEY-----</code> まで）が正しく入力されているか確認してください。</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+  // ── チェックボックス ──
+  const STORAGE_KEY = 'kirinuki-checklist';
+  let checks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+  function toggleCheck(li) {
+    const cb = li.querySelector('input[type="checkbox"]');
+    cb.checked = !cb.checked;
+    li.classList.toggle('done', cb.checked);
+    const idx = [...document.querySelectorAll('.check-list li')].indexOf(li);
+    checks[idx] = cb.checked;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(checks));
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const all = document.querySelectorAll('.check-list li');
+    const done = [...all].filter(li => li.classList.contains('done')).length;
+    const pct = all.length ? Math.round(done / all.length * 100) : 0;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = done + ' / ' + all.length + ' 完了';
+  }
+
+  // 保存済みチェック状態を復元
+  document.addEventListener('DOMContentLoaded', () => {
+    const lis = document.querySelectorAll('.check-list li');
+    lis.forEach((li, i) => {
+      if (checks[i]) {
+        li.querySelector('input').checked = true;
+        li.classList.add('done');
+      }
+    });
+    updateProgress();
+  });
+
+  // ── ステップの開閉 ──
+  function toggleStep(header) {
+    header.parentElement.classList.toggle('collapsed');
+  }
+
+  // ── トラブル Q&A ──
+  function toggleTrouble(item) {
+    item.classList.toggle('open');
+  }
+
+  // ── サイドバーのアクティブ表示 ──
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+        const nav = document.getElementById('nav' + id.replace('step',''));
+        if (nav) nav.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.step-card[id]').forEach(el => observer.observe(el));
+
+  // ── メモ欄をローカルストレージに保存 ──
+  const MEMO_KEY = 'kirinuki-memo';
+  const memos = JSON.parse(localStorage.getItem(MEMO_KEY) || '{}');
+  document.querySelectorAll('.memo-input').forEach((input, i) => {
+    if (memos[i]) input.value = memos[i];
+    input.addEventListener('input', () => {
+      memos[i] = input.value;
+      localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
+    });
+  });
+</script>
+</body>
+</html>
