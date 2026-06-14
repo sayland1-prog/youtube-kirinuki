@@ -16,7 +16,13 @@ from sqlalchemy import select
 from celery_app import celery_app
 from database import SessionLocal
 from models import Job
-from pipeline_adapter import run_fetch, run_analyze, run_clip, run_transcribe
+from pipeline_adapter import load_limits, run_fetch, run_analyze, run_clip, run_transcribe
+
+_LIMITS = load_limits()
+
+
+class VideoTooLongError(Exception):
+    """処理上限を超える長尺動画。"""
 from storage import delete_expired_jobs, generate_signed_urls, upload_file
 from mailer import send_failure_email, send_success_email
 
@@ -68,6 +74,15 @@ def process_job(self, job_id: str) -> None:
             _update_status(job_id, "downloading")
             result = run_fetch(youtube_url, work_dir)
             meta = result.get("meta", {})
+
+            # コスト防御: 尺上限を超える動画は文字起こし(CPU)/Claude(トークン)前に拒否
+            duration = meta.get("duration") or 0
+            max_seconds = _LIMITS["max_video_seconds"]
+            if duration and duration > max_seconds:
+                raise VideoTooLongError(
+                    f"動画が長すぎます（{int(duration // 60)}分）。"
+                    f"{max_seconds // 60}分以内の動画をご利用ください。"
+                )
 
             # 工程2: 文字起こし
             _update_status(job_id, "transcribing")
@@ -150,6 +165,16 @@ def process_job(self, job_id: str) -> None:
                 for rec in clip_records
             ]
             send_success_email(email, job_id, clips_for_mail, expires_at)
+
+        except VideoTooLongError as exc:
+            # 尺超過はそのままユーザーへ見せる（生活者語で十分な文言のため）
+            user_msg = str(exc)
+            _update_status(job_id, "failed", user_msg)
+            with SessionLocal() as db:
+                job = db.get(Job, uuid.UUID(job_id))
+                if job:
+                    send_failure_email(job.email, job_id, user_msg)
+            return
 
         except Exception as exc:
             user_msg = _to_user_error(exc)

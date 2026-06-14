@@ -7,10 +7,11 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="space-y-8 py-4">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-3xl space-y-8 px-6 py-12">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">利用規約</h1>
-        <p className="text-sm text-gray-500">最終更新: 2025年1月</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">利用規約</h1>
+        <p className="text-sm text-muted-foreground">最終更新: 2025年1月</p>
       </div>
 
       {/* 著作権・コンテンツ */}
@@ -99,6 +100,7 @@ export default function TermsPage() {
         >
           ← トップに戻る
         </Link>
+      </div>
       </div>
     </div>
   );

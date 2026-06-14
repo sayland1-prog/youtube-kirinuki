@@ -28,6 +28,24 @@ def _load_cfg() -> dict:
     return yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
 
 
+# コスト防御用のデフォルト（config.yaml の limits が無い場合のフォールバック）
+_DEFAULT_LIMITS = {
+    "max_video_seconds": 5400,
+    "max_transcript_chars": 80000,
+    "rate_per_ip_day": 5,
+    "rate_per_email_day": 5,
+    "rate_total_day": 100,
+}
+
+
+def load_limits() -> dict:
+    """Web サービスのコスト防御上限を返す。config.yaml の limits をデフォルトにマージ。"""
+    cfg = _load_cfg()
+    limits = dict(_DEFAULT_LIMITS)
+    limits.update(cfg.get("limits") or {})
+    return limits
+
+
 def run_fetch(
     youtube_url: str,
     work_dir: Path,
@@ -106,6 +124,17 @@ def run_analyze(
 
     transcript_path = work_dir / "transcript.json"
     transcript_data = json.loads(transcript_path.read_text(encoding="utf-8"))
+
+    # コスト防御: Claude へ渡す文字起こしの総量を上限で打ち切る（入力トークン暴発の二重防止）
+    max_chars = load_limits()["max_transcript_chars"]
+    total = 0
+    capped = []
+    for seg in transcript_data:
+        total += len(seg.get("text", ""))
+        if total > max_chars:
+            break
+        capped.append(seg)
+    transcript_data = capped or transcript_data[:1]
 
     clips = analyze(transcript_data, meta, cfg["analyze"])
 

@@ -17,6 +17,8 @@ class Job(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     youtube_url = Column(Text, nullable=False)
     email = Column(String(255), nullable=False)
+    # レート制限（IP単位）用。プロキシ経由のため X-Forwarded-For 先頭を保存
+    client_ip = Column(String(64), nullable=True)
     # queued / downloading / transcribing / analyzing / clipping / done / failed
     status = Column(String(32), nullable=False, default="queued")
     error_msg = Column(Text, nullable=True)

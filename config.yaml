@@ -25,6 +25,16 @@ clip:
   vertical_layout: blur     # blur（ぼかし背景でフィット） / crop（中央クロップ）
   burn_subtitles: true      # 字幕を焼き込む
 
+# ============================================
+# コスト防御（Web サービス専用。CLI は参照しない）
+# ============================================
+limits:
+  max_video_seconds: 5400        # 処理を許可する最大動画尺（秒）。超過は処理前に拒否。90分=5400
+  max_transcript_chars: 80000    # Claude へ渡す文字起こしの最大文字数（尺上限の二重化）
+  rate_per_ip_day: 5             # 同一 IP からの1日あたり最大ジョブ数
+  rate_per_email_day: 5          # 同一メールからの1日あたり最大ジョブ数
+  rate_total_day: 100            # サービス全体の1日あたり最大ジョブ数（コスト天井）
+
 subtitle:
   font: "Hiragino Sans"     # 環境に存在する日本語フォント名（mac標準）
   fontsize_vertical: 72     # 9:16 用フォントサイズ

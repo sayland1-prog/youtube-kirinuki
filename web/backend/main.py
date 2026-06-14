@@ -5,23 +5,26 @@ GET  /api/jobs/{job_id} — ジョブ状態取得
 """
 import os
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
 load_dotenv()  # .env を最初にロード（他の import より前に実行）
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from database import get_db, init_db
 from models import Job
+from pipeline_adapter import load_limits
 from schemas import CreateJobRequest, CreateJobResponse, ErrorResponse, JobResponse
 from storage import generate_signed_urls
 from worker import process_job
 
 MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "10"))
 FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://localhost:3000")
+LIMITS = load_limits()  # コスト防御の上限（config.yaml の limits）
 
 
 @asynccontextmanager
@@ -49,13 +52,31 @@ def _active_job_count(db: Session) -> int:
     ).count()
 
 
+def _client_ip(request: Request) -> str:
+    """プロキシ(nginx)経由のため X-Forwarded-For 先頭を信頼。無ければ直 IP。"""
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _count_since(db: Session, *, hours: int, email: str | None = None, ip: str | None = None) -> int:
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    q = db.query(Job).filter(Job.created_at >= since)
+    if email is not None:
+        q = q.filter(Job.email == email)
+    if ip is not None:
+        q = q.filter(Job.client_ip == ip)
+    return q.count()
+
+
 @app.post(
     "/api/jobs",
     response_model=CreateJobResponse,
     status_code=202,
     responses={400: {"model": ErrorResponse}, 429: {"model": ErrorResponse}},
 )
-def create_job(body: CreateJobRequest, db: Session = Depends(get_db)):
+def create_job(body: CreateJobRequest, request: Request, db: Session = Depends(get_db)):
     # 同時処理上限チェック
     if _active_job_count(db) >= MAX_CONCURRENT_JOBS:
         raise HTTPException(
@@ -63,9 +84,29 @@ def create_job(body: CreateJobRequest, db: Session = Depends(get_db)):
             detail="現在混み合っています。少し時間をおいてから再度お試しください。",
         )
 
+    # コスト防御: 日次レート制限（全体 → IP → メール の順で安い判定から）
+    ip = _client_ip(request)
+    email = str(body.email)
+    if _count_since(db, hours=24) >= LIMITS["rate_total_day"]:
+        raise HTTPException(
+            status_code=429,
+            detail="本日の受付上限に達しました。時間をおいて再度お試しください。",
+        )
+    if _count_since(db, hours=24, ip=ip) >= LIMITS["rate_per_ip_day"]:
+        raise HTTPException(
+            status_code=429,
+            detail="本日のご利用回数の上限に達しました。明日以降に再度お試しください。",
+        )
+    if _count_since(db, hours=24, email=email) >= LIMITS["rate_per_email_day"]:
+        raise HTTPException(
+            status_code=429,
+            detail="このメールアドレスの本日のご利用回数の上限に達しました。",
+        )
+
     job = Job(
         youtube_url=body.youtube_url,
-        email=str(body.email),
+        email=email,
+        client_ip=ip,
         status="queued",
     )
     db.add(job)
