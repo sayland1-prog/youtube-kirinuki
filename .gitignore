@@ -22,6 +22,10 @@ output/
 node_modules/
 .next/
 web/frontend/.next/
+*.tsbuildinfo
+
+# Playwright MCP 出力
+.playwright-mcp/
 
 # Whisper モデルキャッシュ
 ~/.cache/huggingface/
