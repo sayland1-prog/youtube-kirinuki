@@ -352,11 +352,12 @@
   <a href="#step3" id="nav3"><span class="step-num">3</span>DNS 設定</a>
   <a href="#step4" id="nav4"><span class="step-num">4</span>Cloudflare R2</a>
   <a href="#step5" id="nav5"><span class="step-num">5</span>Resend メール</a>
-  <a href="#step6" id="nav6"><span class="step-num">6</span>サーバー設定</a>
-  <a href="#step7" id="nav7"><span class="step-num">7</span>Vercel 公開</a>
-  <a href="#step8" id="nav8"><span class="step-num">8</span>URL 更新</a>
-  <a href="#step9" id="nav9"><span class="step-num">9</span>自動デプロイ</a>
-  <a href="#step10" id="nav10"><span class="step-num">10</span>動作確認</a>
+  <a href="#step6" id="nav6"><span class="step-num">6</span>Claude API・上限</a>
+  <a href="#step7" id="nav7"><span class="step-num">7</span>サーバー設定</a>
+  <a href="#step8" id="nav8"><span class="step-num">8</span>Vercel 公開</a>
+  <a href="#step9" id="nav9"><span class="step-num">9</span>URL 更新</a>
+  <a href="#step10" id="nav10"><span class="step-num">10</span>自動デプロイ</a>
+  <a href="#step11" id="nav11"><span class="step-num">11</span>動作確認</a>
   <a href="#memo" id="navmemo"><span class="step-num">📝</span>メモ欄</a>
   <a href="#trouble" id="navtrouble"><span class="step-num">🔧</span>トラブル対応</a>
 </nav>
@@ -370,7 +371,7 @@
     <p>このページに書かれた作業は、あなた自身がブラウザやターミナルで行う必要がある操作です。<br>上から順番に進めてください。</p>
     <div class="badge-row">
       <span class="badge">⏱ 所要時間 2〜3 時間</span>
-      <span class="badge">🔟 全 10 ステップ</span>
+      <span class="badge">🔟 全 11 ステップ</span>
       <span class="badge">🔰 初心者向け</span>
     </div>
   </div>
@@ -626,10 +627,63 @@ dig api.yourdomain.com +short</pre>
   </div>
 
   <!-- ═══ Step 6 ═══ -->
-  <div class="step-card theme-red" id="step6">
+  <div class="step-card theme-teal" id="step6">
+    <div class="step-header" onclick="toggleStep(this)">
+      <div class="step-icon">🤖</div>
+      <h2>Step 6: Claude API キー取得と「使いすぎ防止」の上限設定</h2>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="step-body">
+      <p style="font-size:14px;margin-bottom:14px;">見どころの選定に Claude を使います。<strong>ここが一番「高額請求」につながりやすい部分</strong>なので、キー取得と<strong>同時に月の上限金額を必ず設定</strong>してください。</p>
+
+      <div class="alert alert-danger">
+        <span class="alert-icon">⚠️</span>
+        <span><strong>最重要：</strong>月間スペンドリミットを設定しないと、万が一の不正利用やバグで<strong>青天井で課金</strong>される可能性があります。コード側でも回数・尺の上限をかけていますが、<strong>最後の砦はこの Console 設定</strong>です。</span>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-1. API キーを発行</h3>
+        <ol>
+          <li><a href="https://console.anthropic.com" target="_blank">https://console.anthropic.com</a> を開いてログイン（無ければ登録）</li>
+          <li>左メニュー「API Keys」→「Create Key」</li>
+          <li>名前を入力（例: <code>kirinuki</code>）→ 作成</li>
+          <li>表示された <code>sk-ant-...</code> をメモ（<strong>この画面でしか表示されません</strong>）</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-2. ⚠️ 月の上限金額（スペンドリミット）を設定【最重要】</h3>
+        <ol>
+          <li>左メニュー「Settings」→「Limits」（または「Billing」→「Spend limits」）を開く</li>
+          <li><strong>Monthly spend limit（月間上限）</strong> に許容できる上限額を入力<br>
+            <span style="font-size:13px;color:#64748b;">例: まずは少額（$20〜50 など）から始めて様子を見て調整</span></li>
+          <li>可能なら <strong>使用量アラート（上限の50%/80% など）</strong> も設定</li>
+          <li>保存する</li>
+        </ol>
+      </div>
+
+      <div class="sub-section">
+        <h3>6-3. （参考）コストの仕組み</h3>
+        <ul style="list-style:disc;padding-left:20px;font-size:14px;">
+          <li>1本ごとに「文字起こし全文＋選定結果」を Claude に送信 → <strong>動画が長いほど高い</strong></li>
+          <li>コード側で動画は <strong>90分まで</strong>に制限済み（<code>config.yaml</code> の <code>limits</code>）</li>
+          <li>1日の処理本数も制限済み（全体30本／IP・メール各3本）</li>
+        </ul>
+      </div>
+
+      <ul class="check-list">
+        <li onclick="toggleCheck(this)"><input type="checkbox"> Claude API キー（<code>sk-ant-...</code>）をメモした</li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> <strong>月間スペンドリミットを設定した（最重要）</strong></li>
+        <li onclick="toggleCheck(this)"><input type="checkbox"> （任意）使用量アラートを設定した</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ Step 7 ═══ -->
+  <div class="step-card theme-red" id="step7">
     <div class="step-header" onclick="toggleStep(this)">
       <div class="step-icon">⚙️</div>
-      <h2>Step 6: サーバーにアプリをセットアップする</h2>
+      <h2>Step 7: サーバーにアプリをセットアップする</h2>
       <span class="chevron">▾</span>
     </div>
     <div class="step-body">
@@ -663,7 +717,7 @@ nano web/backend/.env</pre>
         <p style="font-size:13.5px;margin:8px 0;"><code>nano</code> というテキストエディタが開きます。矢印キーで移動して各値を書き換え、<strong>Ctrl+O → Enter で保存、Ctrl+X で閉じる</strong>。</p>
         <pre>DATABASE_URL=postgresql://kirinuki:<strong>あなたが決めた強いパスワード</strong>@db:5432/kirinuki
 REDIS_URL=redis://redis:6379/0
-ANTHROPIC_API_KEY=sk-ant-（Claude の API キー）
+ANTHROPIC_API_KEY=sk-ant-（Step 6 でメモした Claude の API キー）
 R2_ACCESS_KEY_ID=（Step 4-3 でメモした値）
 R2_SECRET_ACCESS_KEY=（Step 4-3 でメモした値）
 R2_BUCKET=kirinuki
@@ -671,7 +725,7 @@ R2_ENDPOINT=https://（Step 4-4 のアカウントID）.r2.cloudflarestorage.com
 RESEND_API_KEY=（Step 5-3 でメモした re_xxx...）
 MAIL_FROM=noreply@yourdomain.com
 SERVICE_URL=https://yourdomain.com
-FRONTEND_ORIGIN=https://your-app.vercel.app  ← Step 7 完了後に更新
+FRONTEND_ORIGIN=https://your-app.vercel.app  ← Step 8 完了後に更新
 MAX_CONCURRENT_JOBS=10</pre>
       </div>
 
@@ -702,11 +756,11 @@ curl https://api.yourdomain.com/health</pre>
     </div>
   </div>
 
-  <!-- ═══ Step 7 ═══ -->
-  <div class="step-card theme-indigo" id="step7">
+  <!-- ═══ Step 8 ═══ -->
+  <div class="step-card theme-indigo" id="step8">
     <div class="step-header" onclick="toggleStep(this)">
       <div class="step-icon">🚀</div>
-      <h2>Step 7: Vercel でフロントエンドを公開する</h2>
+      <h2>Step 8: Vercel でフロントエンドを公開する</h2>
       <span class="chevron">▾</span>
     </div>
     <div class="step-body">
@@ -748,15 +802,15 @@ curl https://api.yourdomain.com/health</pre>
     </div>
   </div>
 
-  <!-- ═══ Step 8 ═══ -->
-  <div class="step-card theme-yellow" id="step8">
+  <!-- ═══ Step 9 ═══ -->
+  <div class="step-card theme-yellow" id="step9">
     <div class="step-header" onclick="toggleStep(this)">
       <div class="step-icon">🔄</div>
-      <h2>Step 8: サーバーの設定を Vercel URL で更新する</h2>
+      <h2>Step 9: サーバーの設定を Vercel URL で更新する</h2>
       <span class="chevron">▾</span>
     </div>
     <div class="step-body">
-      <p style="font-size:14px;margin-bottom:14px;">Step 7 で確定した Vercel の URL を、サーバーの設定に反映させます。</p>
+      <p style="font-size:14px;margin-bottom:14px;">Step 8 で確定した Vercel の URL を、サーバーの設定に反映させます。</p>
       <pre><span class="comment"># サーバーに SSH 接続</span>
 ssh root@49.12.34.56
 
@@ -773,11 +827,11 @@ docker compose -f /app/docker-compose.yml restart api</pre>
     </div>
   </div>
 
-  <!-- ═══ Step 9 ═══ -->
-  <div class="step-card theme-slate" id="step9">
+  <!-- ═══ Step 10 ═══ -->
+  <div class="step-card theme-slate" id="step10">
     <div class="step-header" onclick="toggleStep(this)">
       <div class="step-icon">🤖</div>
-      <h2>Step 9: GitHub Actions で自動デプロイを設定する</h2>
+      <h2>Step 10: GitHub Actions で自動デプロイを設定する</h2>
       <span class="chevron">▾</span>
     </div>
     <div class="step-body">
@@ -808,11 +862,11 @@ docker compose -f /app/docker-compose.yml restart api</pre>
     </div>
   </div>
 
-  <!-- ═══ Step 10 ═══ -->
-  <div class="step-card theme-pink" id="step10">
+  <!-- ═══ Step 11 ═══ -->
+  <div class="step-card theme-pink" id="step11">
     <div class="step-header" onclick="toggleStep(this)">
       <div class="step-icon">✅</div>
-      <h2>Step 10: 最終動作確認</h2>
+      <h2>Step 11: 最終動作確認</h2>
       <span class="chevron">▾</span>
     </div>
     <div class="step-body">
